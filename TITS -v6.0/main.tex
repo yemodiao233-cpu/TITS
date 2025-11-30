@@ -1,0 +1,268 @@
+\documentclass[12pt]{article}
+
+% --- 常见的标准宏包 ---
+\usepackage{amsmath}        % 数学环境和公式
+\usepackage{amssymb}        % 更多数学符号
+\usepackage{graphicx}       % 插入图片
+\usepackage{booktabs}       % 专业三线表
+\usepackage{caption}        % 增强标题控制
+\usepackage{subcaption}     % 插入子图
+\usepackage{geometry}       % 页面布局控制
+\usepackage{multirow}       % 用于表格中合并单元格
+\usepackage{float}          % 用于精确控制表格位置 (如 [H] 选项)
+\usepackage{hyperref}       % 启用交叉引用
+\usepackage{enumerate}      % 增强列表控制
+
+% --- 调整垂直间距，使排版更紧凑 ---
+\setlength{\intextsep}{10pt plus 2pt minus 2pt} % 浮动体上下间距
+\setlength{\textfloatsep}{10pt plus 2pt minus 4pt} % 浮动体与文本间距
+\setlength{\abovecaptionskip}{6pt} % 标题上方间距
+\setlength{\belowcaptionskip}{6pt} % 标题下方间距
+
+\geometry{margin=1in}
+
+\begin{document}
+	
+	\title{Experimental Evaluation of Edge Computing Resource Management}
+	\author{Integrated Manuscript}
+	\date{\today}
+	\maketitle
+	
+	\section{Experimental Settings}
+	
+	\subsection{Simulation Setup}
+	
+	The experimental evaluation is performed in two distinct but related scenarios: a \textbf{Vehicular Edge Computing (VEC)} environment and a general \textbf{Service Function Chain (SFC) Mapping} network. Both scenarios utilize similar fundamental settings for learning-based solvers.
+	
+	\subsubsection{VEC Environment (Scenario 1)}
+	
+	In our VEC simulations, we build an environment with $N_v$ vehicles and $J$ fog access points (F-APs). The environment (mobility, channels, queues, arrivals) is configured via \texttt{scenario.py}.
+	
+	\begin{itemize}
+		\item \textbf{Resource Capacity}: F-AP CPU and bandwidth are sampled uniformly in $[50, 100]$.
+		\item \textbf{Vehicle Settings}: Vehicle TX power is uniform in $[0, 20]$.
+		\item \textbf{Task Arrivals}: Task arrivals follow a \textbf{Poisson process} with rate $\lambda=1$. Task sizes and bandwidth demands are uniform in $[0, 20]$ units.
+		\item \textbf{Task Lifetime}: Lifetimes are \textbf{exponential} with mean 70 s. Resources are freed when tasks complete or are dropped.
+	\end{itemize}
+	
+	\subsubsection{SFC Mapping Network (Scenario 2)}
+	
+	For the SFC mapping simulation, we use the \textbf{GT-ITM} \cite{gtitm_ref1, gtitm_ref2} tool to generate a physical network with 60 nodes and 150 links.
+	
+	\begin{itemize}
+		\item \textbf{Resource Capacity}: Node resources and bandwidth resources are uniformly distributed between 50 and 100 units.
+		\item \textbf{SFC Requests}: Requests arrive sequentially following a \textbf{Poisson process with an average arrival rate $\lambda = 1$} \cite{poisson_ref1, poisson_ref2, poisson_ref3}. The use of the Poisson process is a standard practice in network simulation to model independent event arrivals \cite{poisson_search1}.
+		\item \textbf{SFC Structure}: The number of VNFs in the SFC request is uniformly distributed between 2 and 10 \cite{vnf_num_ref}.
+		\item \textbf{Resource Requirements}: Node resources and bandwidth resources of each SFC request are uniformly distributed between 0 and 20 units \cite{resources_ref}.
+		\item \textbf{Request Lifetime}: The lifetime of SFC requests follows the \textbf{exponential distribution} with an average of 70 seconds \cite{exp_ref}. This distribution is mathematically consistent with the independent arrivals modeled by the Poisson process (memoryless property).
+	\end{itemize}
+	
+	\subsubsection{Learning-based Solvers Configuration}
+	
+	For the learning-based solvers used in both scenarios (e.g., Deep Reinforcement Learning with Graph Convolutional Networks), we employ the following settings:
+	
+	\begin{itemize}
+		\item \textbf{Optimizer}: \textbf{Adam optimizer} \cite{adam_ref} (chosen for adaptive learning rate and stability \cite{adam_search1}).
+		\item \textbf{Activation}: \textbf{ReLU activation function} (standard choice for efficiency and mitigating vanishing gradients \cite{relu_ref}).
+		\item \textbf{Network Structure}: Two \textbf{GCN layers} and two \textbf{dense layers}. GCNs are essential for processing the graph-structured state space \cite{gcn_search1}.
+		\item \textbf{Hidden Units}: GCN hidden units = 64, dense units = 300.
+		\item \textbf{Discount Factor}: Discount factor $\gamma$ is set to \textbf{0.995} (high value to prioritize long-term system performance \cite{gamma_search1}).
+		\item \textbf{Weights}: The objective weights are set to $(\alpha, \beta, \theta)=(1, 1, 1)$ for VEC, and resource weights $(\eta_i, \beta) = 1$ for SFC, assuming equal importance in the simulated environment.
+	\end{itemize}
+	
+	\textbf{Testing:} Both experiments are typically run for 2000 episodes/requests, with each experiment repeated 10 times under the same topology but different random seeds. Key parameters are summarized in Table~\ref{tab:sim_combined}.
+	
+	\begin{table}[H]
+		\centering
+		\caption{Key Simulation Parameters (Combined)}
+		\label{tab:sim_combined}
+		% 修复 Table 1 截断问题: 缩短第二列宽度，让表格整体居中
+		\begin{tabular}{lp{4cm}c} 
+			\toprule
+			\textbf{Parameter} & \textbf{Value / Range} & \textbf{Selection Reason / Context} \\
+			\midrule
+			\multicolumn{3}{c}{\textit{Network and Request Settings}} \\
+			\midrule
+			Network Topology (SFC) & GT-ITM (60 nodes, 150 links) & Standard graph generation tool \cite{gtitm_ref1} \\
+			F-AP CPU / Bandwidth & Uniform $[50, 100]$ & Realistic range for edge servers \\
+			Vehicle TX power (VEC) & $[0,20]$ & VEC specific parameter \\
+			Arrival rate $\lambda$ & 1 (Poisson) & Standard model for independent task arrivals \cite{poisson_search1} \\
+			Task/SFC size / req. & $[0,20]$ & Typical resource demands \\
+			Task/SFC lifetime & Exponential (Mean 70s) & Consistent with Poisson; models SLA \cite{exp_ref} \\
+			\midrule
+			\multicolumn{3}{c}{\textit{Learning Algorithm Settings}} \\
+			\midrule
+			Optimizer & Adam \cite{adam_ref} & Faster convergence, better stability \cite{adam_search1} \\
+			Activation Function & ReLU & Computational efficiency \cite{relu_ref} \\
+			GCN hidden units & 64 & Balance model capacity and complexity \\
+			Dense hidden units & 300 & Enhanced non-linear mapping \\
+			Discount factor $\gamma$ & 0.995 & Prioritizes long-term system performance \cite{gamma_search1} \\
+			Weights $(\alpha,\beta,\theta)$ / $(\eta_i, \beta)$ & $(1,1,1)$ / $1$ & Assumes equal importance of metrics/resources \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
+	
+	\subsection{Objective Function and Key Performance Indicators}
+	
+	\subsubsection{VEC Objective Function (OLMA)}
+	
+	The core objective of the OLMA (Online Lyapunov-based Matching and Allocation) algorithm is to minimize the Overall Long-Term Average Cost ($\bar{C}$) while ensuring queue stability.
+	
+	\begin{table}[H]
+		\centering
+		\caption{Overall Long-Term Average Cost ($\bar{C}$)}
+		% 修复 Table 3 截断问题 (原 Table 3, 编号 2): 调整列宽
+		\begin{tabular}{lp{9cm}}
+			\toprule
+			Metric & Description \\
+			\midrule
+			Overall Long-Term Average Cost & 
+			$\displaystyle \bar{C} = \lim_{T\to\infty}\frac{1}{T}\sum_{t=1}^{T}\Big(E(t)+\lambda_{\text{cloud}}U_{\text{cloud}}(t)+\lambda_{\text{sw}}S(t)\Big)$ \\
+			Selection Reason & Core objective of OLMA. Minimizes \textbf{energy ($E$)}, \textbf{cloud usage ($U_{\text{cloud}}$)}, and \textbf{switch costs ($S$)} while ensuring stability. \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
+	
+	\subsubsection{Key Performance Indicators (KPIs)}
+	
+	Key metrics are used to evaluate the service quality, stability, complexity, and theoretical validity of the proposed algorithms.
+	
+	\begin{table}[H]
+		\centering
+		\caption{Key Performance Indicators (KPIs)}
+		\begin{tabular}{lllp{1.5cm}p{4.5cm}} 
+			\toprule
+			ID & Metric & Layer & Role & Description \\ 
+			\midrule
+			3 & Avg. End-to-End Delay ($\bar{D}$) & Service Quality & Total Delay & Sum of queue, transmission, computation, and return delay. \\ % 简化文本
+			5 & Queue Stability & Stability/Robustness & Backlog & $\displaystyle \bar{Q} = \frac{1}{T}\sum_{t}\sum_i Q_i(t)$ (Average queue backlog over time $T$). \\
+			2 & Cost-Delay Trade-off & Theoretical Validation & Validation & Observe $\bar{C}$ vs $\bar{D}$ by varying the control parameter $V$. \\ % 简化文本
+			18 & Decision Time & Complexity/Practicality & Complexity & Time to compute the joint decision per slot, assessing feasibility. \\ % 简化文本
+			\bottomrule
+		\end{tabular}
+	\end{table}
+	
+	
+	
+	% 删除 \newpage 以避免第 4 页下方的大量空白
+	
+	\section{Hyperparameter Sensitivity Analysis}
+	
+	We evaluate the sensitivity of the OLMA algorithm (VEC scenario) to key hyperparameters, including the discount factor $\gamma$, Lyapunov control parameter $V$, weights, and physical constraints. We summarize the optimal settings for all critical hyperparameters derived from our analysis in Table \ref{tab:optimal_params}. Further detailed analysis of their impact across different ranges is shown in the following figures.
+	
+	\begin{table}[H]
+		\centering
+		\caption{Optimal Hyperparameter Settings and Corresponding Performance}
+		\label{tab:optimal_params}
+		\begin{tabular}{lllc}
+			\toprule
+			Parameter & Role / Type & Optimal Value & Min. Avg. Cost \\
+			\midrule
+			Discount Factor $\gamma$ & Algorithmic / Foresight & 0.995 & 13.60 \\
+			Lyapunov Parameter $V$ & Control / Trade-off & 100 & 13.55 \\
+			Energy Weight $W_E$ & Cost Composition & 0.5 & 13.70 \\
+			Max Power $P_{\max}$ & Physical Constraint & 2.0 & 13.65 \\
+			BCD Iterations $I_{bcd}$ & Algorithmic / Convergence & 10 & 13.60 \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
+	
+	\subsection{Impact of Hyperparameters on System Cost}
+	
+	The long-term effects of varying the control parameter $V$, cost weights ($W_E$), physical limits ($P_{\max}, F_{\max}$), and algorithmic settings ($I_{bcd}, \epsilon$) are presented graphically.
+	
+	\begin{enumerate}
+		\item \textbf{Lyapunov Parameter $V$}: Controls the trade-off between energy cost and queue stability (delay).
+		\item \textbf{Energy Weight $W_E$}: Reflects the system's preference for energy saving versus other costs.
+		\item \textbf{Physical Limits $P_{\max}$ and $F_{\max}$}: Direct impact on the feasible region of the optimization problem.
+		\item \textbf{Algorithm Iterations $I_{bcd}$ and $\epsilon$}: Affects the convergence quality and computational overhead.
+	\end{enumerate}
+	
+	Fig.~\ref{fig:sensitivity_grid} presents these relationships. Specifically, Fig.~\ref{fig:sens_V} confirms the $[O(1/V), O(V)]$ trade-off characteristic of Lyapunov optimization, where increasing $V$ decreases cost ($\bar{C}$) at the expense of potential stability/delay ($\bar{D}$). Fig.~\ref{fig:sens_Pmax} and Fig.~\ref{fig:sens_Fmax} show that relaxing physical constraints allows for lower costs up to a saturation point. Furthermore, Fig.~\ref{fig:sens_epsilon} illustrates that a sufficiently small convergence threshold $\epsilon$ is necessary for optimal performance, though extremely small values yield negligible further gains.
+	
+	% 整合所有 6 张图到一个 2x3 的网格中，并调整 subfigure 宽度，进一步紧凑排版
+	\begin{figure}[H]
+		\centering
+		% --- 第一行子图 ---
+		\begin{subfigure}[b]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{plots/sensitivity/sensitivity_V.png}
+			\caption{Lyapunov Parameter $V$.}
+			\label{fig:sens_V}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[b]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{plots/sensitivity/sensitivity_weights_E.png}
+			\caption{Energy Weight $W_E$.}
+			\label{fig:sens_weights}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[b]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{plots/sensitivity/sensitivity_P_max.png}
+			\caption{Power Limit $P_{\max}$.}
+			\label{fig:sens_Pmax}
+		\end{subfigure}
+		
+		\vspace{0.5em} % 减小行间距
+		
+		% --- 第二行子图 ---
+		\begin{subfigure}[b]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{plots/sensitivity/sensitivity_I_bcd.png}
+			\caption{BCD Iterations $I_{bcd}$.}
+			\label{fig:sens_Ibcd}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[b]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{plots/sensitivity/sensitivity_F_max.png} 
+			\caption{Max Frequency $F_{\max}$.}
+			\label{fig:sens_Fmax}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[b]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{plots/sensitivity/sensitivity_epsilon.png} 
+			\caption{Convergence Threshold $\epsilon$.}
+			\label{fig:sens_epsilon}
+		\end{subfigure}
+		
+		\caption{Sensitivity analysis for key hyperparameters (Control $V$, Preference $W_E$, Physical Limits $P_{\max}/F_{\max}$, and Algorithmic $I_{bcd}/\epsilon$).}
+		\label{fig:sensitivity_grid}
+	\end{figure}
+	
+	% 删除 \newpage 以避免第 6 页下方的大量空白
+	
+	\section{Ablation Study}
+	
+	An ablation study was performed to validate the contribution of key algorithmic components within the full OLMA method, namely Matching-based Discrete Offloading (MDO) and SCA-based Continuous Resource Allocation (SCRA). The numeric results, reflecting the output of \texttt{logs/ablation\_results.csv}, are presented below.
+	
+	\begin{table}[H]
+		\centering
+		\caption{Ablation study numeric results (from logs/ablation\_results.csv)}
+		\label{tab:ablation}
+		\begin{tabular}{p{5cm}ccc} 
+			\toprule
+			\textbf{Method} & \textbf{Avg. Cost} & \textbf{Avg. Delay} & \textbf{Avg. Energy} \\
+			\midrule
+			Full OLMA (Full) & 13.60 & 1.25 & 0.56 \\
+			w/o Power Control (\texttt{no\_power}) & 15.10 & 1.30 & 0.70 \\
+			w/o Bandwidth Alloc (\texttt{no\_bw}) & 14.50 & 1.45 & 0.58 \\
+			w/o Comp. Offloading (\texttt{no\_offload}) & 16.00 & 1.80 & 0.50 \\
+			w/o Freq Scaling (\texttt{no\_freq}) & 14.10 & 1.28 & 0.65 \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
+	
+	The results confirm that key components of the full OLMA method are crucial for overall system performance. For instance, the degradation observed in Average Cost and the increase in Average Delay when specific mechanisms are removed validate that both MDO (handling discrete offloading decisions) and SCRA (handling continuous power/resource allocation) are crucial, affirming the necessity of a joint design for discrete offloading and continuous resource allocation.
+	
+	\section{Conclusions from Experiments}
+	
+	The sensitivity study indicates that the OLMA algorithm is robust across a wide range of parameter settings. Larger $\gamma$ improves long-term stability and foresight, while the Lyapunov control parameter $V$ effectively tunes the delay-cost trade-off, validating the theoretical framework. The system benefits from higher power limits ($P_{\max}$) but exhibits diminishing returns after an optimal point. The ablation study further validates that both MDO and SCRA modules contribute meaningfully to minimizing the overall system cost and energy consumption, affirming the necessity of a joint design for discrete offloading and continuous resource allocation.
+	
+	\bibliographystyle{IEEEtran}
+	\bibliography{references}
+	
+\end{document}
