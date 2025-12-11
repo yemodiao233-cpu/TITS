@@ -1,0 +1,6 @@
+Algorithm,Real Dataset Mean,Real Dataset Std,Random Dataset Mean,Random Dataset Std
+OLMA_Solver,0.0,0.0,0.4974744164280866,nan
+A3C_GCN_Seq2Seq_Adapter,0.0,0.0,0.7689080099736803,nan
+BARGAIN_MATCH_Solver,0.0,0.0,1.1967158134550064,nan
+NOMA_VEC_Solver,0.0,0.0,1.473017343546038,nan
+OORAA_Solver,0.0,0.0,0.9414622174506616,nan
